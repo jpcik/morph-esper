@@ -1,16 +1,15 @@
-name := "adapter-esper"
+name := "esper-engine"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.1"
+version := "1.0.0"
 
 scalaVersion := "2.9.1"
 
 crossPaths := false
 
 libraryDependencies ++= Seq(
-  "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.1",
-  "es.upm.fi.oeg.morph.streams" % "esper-engine" % "1.0.0",
+  "junit" % "junit" % "4.7",
   "com.espertech" % "esper" % "4.3.0",
   "org.scalatest" % "scalatest_2.9.1" % "1.7.2" % "test",
   "org.scalacheck" % "scalacheck_2.9.1" % "1.9" % "test",
@@ -22,7 +21,6 @@ libraryDependencies ++= Seq(
 resolvers ++= Seq(
   DefaultMavenRepository,
   "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository",
-  "aldebaran-snapshots" at "http://aldebaran.dia.fi.upm.es/artifactory/sstreams-snapshots-local",
   "aldebaran-releases" at "http://aldebaran.dia.fi.upm.es/artifactory/sstreams-releases-local",
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"  
 )
@@ -38,4 +36,12 @@ unmanagedSourceDirectories in Compile <<= (scalaSource in Compile)(Seq(_))
 unmanagedSourceDirectories in Test <<= (scalaSource in Test)(Seq(_))
 
 parallelExecution in Test := false
+
+publishTo := Some("Artifactory Realm" at "http://aldebaran.dia.fi.upm.es/artifactory/sstreams-releases-local")
+
+credentials += Credentials(Path.userHome / ".ivy2" / ".credentials")
+
+publishMavenStyle := true
+
+publishArtifact in (Compile, packageSrc) := false
 
