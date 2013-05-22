@@ -27,12 +27,14 @@ import collection.JavaConversions._
 import com.hp.hpl.jena.query.QuerySolution
 import es.upm.fi.oeg.morph.voc.RDFFormat
 import es.upm.fi.oeg.morph.stream.query.Modifiers
+import es.upm.fi.oeg.morph.stream.algebra.PatternOp
+import org.slf4j.LoggerFactory
 
-class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modifiers.OutputModifier]) 
-  extends SqlQuery(op,projectionVars,mods) {
+class EsperQuery (op:AlgebraOp,mods:Array[Modifiers.OutputModifier]) 
+  extends SqlQuery(op,mods) {
   
   lazy val unionQueries:Seq[EsperQuery]=unions.asInstanceOf[Seq[EsperQuery]]
-  var outputevery=""
+  var outputevery=" "
   
   def serializeSelect=
     "SELECT "+ 
@@ -42,45 +44,41 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
     (if (distinct) "DISTINCT " else "") +
       selectXprs.map(s=>s._2 +" AS "+s._1).mkString(",")
       
-  def generateWhere(op:AlgebraOp,vars:Map[String,Xpr]):Unit=
-    generateWhere(op,vars,true)
+  def generateWhere(op:AlgebraOp):Unit=generateWhere(op,true)
   
-  def generateWhere(op:AlgebraOp,vars:Map[String,Xpr],joinConditions:Boolean):Unit=op match{
-    case root:RootOp=>generateWhere(root.subOp,vars)
-    case group:GroupOp=>generateWhere(group.subOp,vars)
+  def generateWhere(op:AlgebraOp,joinConditions:Boolean):Unit=op match{
+    case root:RootOp=>generateWhere(root.subOp)
+    case group:GroupOp=>generateWhere(group.subOp)
     case join:InnerJoinOp=>
-      val joinXpr = get(join).mkString(",") 
+      //val joinXpr = get(join).mkString(",") 
       if (joinConditions && !join.conditions.isEmpty) 			  
 		where+=joinXprs(join).mkString(" AND ")		
-	  generateWhere(join.left,vars,false)
-	  generateWhere(join.right,vars,false)
+	  generateWhere(join.left,false)
+	  generateWhere(join.right,false)
     case join:LeftOuterJoinOp=>
-	  generateWhere(join.left,vars)
-	  generateWhere(join.right,vars)
+	  generateWhere(join.left)
+	  generateWhere(join.right)
     case sel:SelectionOp=>  
-      println("alll "+vars.keys)
-      where++=conditions(sel,vars)
-      generateWhere(sel.subOp,vars)
-    case proj:ProjectionOp=>generateWhere(proj.subOp,vars)
+      where++=conditions(sel)
+      generateWhere(sel.subOp)
+    case proj:ProjectionOp=>generateWhere(proj.subOp)
     case win:WindowOp=>      
-    case rel:RelationOp=>where+=getAlias(rel.id)
+    case rel:RelationOp=>
   }
     
   def generateUnion(op:AlgebraOp):Unit=op match{
     case union:MultiUnionOp=>
       val un=union.children.values.map{opi=>
-        val q=new EsperQuery(new RootOp("",opi),projectionVars,mods)
-        //q.load(new RootOp("",opi))
-        q
+        new EsperQuery(new RootOp("",opi),mods)        
       }
       unions++=un
   }
   
   def generateFrom(op:AlgebraOp):Unit=op match{
     case root:RootOp=>generateFrom(root.subOp)
-    case join:LeftOuterJoinOp=>from++=get(join)	  
+    case join:LeftOuterJoinOp=>//from++=get(join)	  
     case join:JoinOp=>
-      val joinXpr = get(join).mkString(",") 
+      //val joinXpr = get(join).mkString(",") 
 	  generateFrom(join.left)
 	  generateFrom(join.right)
     case proj:ProjectionOp=>generateFrom(proj.subOp)
@@ -88,12 +86,12 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
     case group:GroupOp=>generateFrom(group.subOp)
     case win:WindowOp=>      
       from+=win.extentName+window(win)+ " AS "+getAlias(win.id)
+    case pat:PatternOp=>
+      from+="method:SparqlGet.getData('SELECT * WHERE{"+pat.patternString+"}') AS "+getAlias(pat.id)      
     case rel:RelationOp=> from+=extentAlias(rel)
     case union:MultiUnionOp=>
       val un=union.children.values.map{opi=>
-        val q=new EsperQuery(new RootOp("",opi),projectionVars,mods)
-        q.serializeQuery
-        //q.build(new RootOp("",opi))                
+        new EsperQuery(new RootOp("",opi),mods).serializeQuery        
       }
       from+=un.mkString(" union ")
   }
@@ -112,15 +110,15 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
           selectXprs.put(e._1,UnassignedVarXpr)        
         else if (selectXprs.contains(e._1) || (isroot && xpr!=null) ) xpr match {
           case rep:ReplaceXpr=>
-            rep.varNames.foreach(v=>selectXprs.put(e._1+"_"+v,repExpr(VarXpr(v),proj)))
-          case v:VarXpr=>selectXprs.put(e._1,repExpr(v,proj))
+            rep.varNames.foreach(v=>selectXprs.put(e._1+"_"+v,condExpr(VarXpr(v),proj)))
+          case v:VarXpr=>selectXprs.put(e._1,condExpr(v,proj))
           case x:Xpr=>selectXprs.put(e._1,xpr)  
         }              
       }
       generateSelectVars(proj.subOp)
     case group:GroupOp=>
       group.aggs.foreach{agg=>       
-        selectXprs.put(agg._1,repExpr(agg._2,group,allXprs.toMap))
+        selectXprs.put(agg._1,condExpr(agg._2,group))
       }
       generateSelectVars(group.subOp)
     case join:JoinOp=>
@@ -130,7 +128,7 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
       generateSelectVars(selec.subOp)
     case _=>
   }
-
+/*
   def generateAllVars(op:AlgebraOp):Unit= op match{
     case root:RootOp=>generateAllVars(root.subOp)
     case proj:ProjectionOp=>
@@ -160,10 +158,7 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
       generateAllVars(selec.subOp)
     case _=>
   }
-
-  override def getProjection:Map[String,String]={
-    projectionVars.map(p=>p._1->null)
-  }
+*/
   
   //tests for static triples: remove 
   private def fakeQuery(q:String)=
@@ -180,14 +175,15 @@ class EsperQuery (op:AlgebraOp,projectionVars:Map[String,String],mods:Array[Modi
 	      unions.map(q=>q.serializeQuery).mkString(" UNION ")
 	    }
 	    else {
-	      generateAllVars(op)
+	      //generateAllVars(op)
 	      generateSelectVars(op)
 	      selectXprs.filter(_._2==UnassignedVarXpr).foreach(t=>selectXprs.remove(t._1))
 	      generateFrom(op)
-    	  generateWhere(op,allXprs.toMap)
+    	  generateWhere(op)
 	      val wherestr=if (where.isEmpty) "" else " WHERE "+where.mkString(" AND ")
 	      //return fakeQuery(q)
-	      serializeSelect+" FROM "+from.mkString(",")+wherestr+ outputevery
+	      val out = if (outputevery==null) "" else outputevery
+	      serializeSelect+" FROM "+from.mkString(",")+wherestr+" "+ out
 	    }
 	  
 	  case _=>throw new Exception("Unsupported operator: "+op)
@@ -223,10 +219,10 @@ case class TripleData(@BeanProperty p1:String,@BeanProperty p2:String,@BeanPrope
     @BeanProperty p4:String,@BeanProperty p5:String,@BeanProperty p6:String)
 
 object SparqlGet {
-
+  val logger=LoggerFactory.getLogger(getClass)
   def getvar(sol:QuerySolution,vari:String)=
     if (vari==null) null
-    else sol.getLiteral(vari).getString
+    else sol.get(vari).toString
 
   def getData(query:String):Array[TripleData] ={
     println("best query: "+query)
@@ -238,17 +234,17 @@ object SparqlGet {
     val res=qexec.execSelect
     val tt:Seq[String]=(1 to 10).map(_=>null)
     val vars:Seq[String]=res.getResultVars.toSeq++tt
-    
-    res.map{sol=>      
-      TripleData(getvar(sol,vars(0)),
-          getvar(sol,vars(1)),
-          getvar(sol,vars(2)),
-          getvar(sol,vars(3)),
-          getvar(sol,vars(4)),
-          getvar(sol,vars(5)))
-          
+    logger.debug("result vars: "+vars)
+    val finali=res.map{sol=>      
+      TripleData(getvar(sol,vars(0)),getvar(sol,vars(1)),
+                 getvar(sol,vars(2)),getvar(sol,vars(3)),
+                 getvar(sol,vars(4)),getvar(sol,vars(5)))          
     }.toArray
-    //Array(TripleData("ISANGALL2","rata","topo"),
-      //  TripleData("gata","tapa","topo"))
+    println("triiii"+finali.mkString("--"))
+    if (finali.isEmpty)
+      Array(TripleData(null,null,null,null,null,null))
+    else finali
+      //TripleData("ISANGALL2","rata","topo","","",""),
+        //TripleData("gata","tapa","topo","","",""))
   }
 }

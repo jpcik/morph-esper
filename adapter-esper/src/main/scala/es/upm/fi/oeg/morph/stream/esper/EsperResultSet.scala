@@ -10,6 +10,7 @@ import es.upm.fi.oeg.morph.stream.algebra.xpr.VarXpr
 import es.upm.fi.oeg.morph.stream.algebra.xpr.NullValueXpr
 import es.upm.fi.oeg.morph.stream.algebra.xpr.OperationXpr
 import org.slf4j.LoggerFactory
+import es.upm.fi.oeg.morph.stream.algebra.xpr.ConstantXpr
 
 class EsperResultSet(val records:Stream[Array[Object]], 
     val metadata: Map[String, Xpr],queryVars:Array[String]) extends StreamResultSet {
@@ -71,7 +72,9 @@ class EsperResultSet(val records:Stream[Array[Object]],
       case v:VarXpr=>
         current(internalLabels(columnLabel))
       case NullValueXpr=>null
-      case op:OperationXpr=>op.evaluate
+      case const:ConstantXpr=>const.evaluate
+      case _=>current(internalLabels(columnLabel))
+      //case op:OperationXpr=>op.evaluate
     }
   }
 

@@ -101,11 +101,11 @@ class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Che
     logger.info(EvaluatorUtils.serialize(bindings))
   }    
 
-  @Test@Ignore def staticJoin{ 	 
+  @Test def staticJoin{ 	 
     val qid=eval.registerQuery(srbench("static-join.sparql"),srbenchR2rml)        
-    Thread.sleep(4000)
+    Thread.sleep(10000)
     val bindings=eval.pull(qid)
-    EvaluatorUtils.serialize(bindings)
+    logger.info(EvaluatorUtils.serialize(bindings))
   }    
 
   

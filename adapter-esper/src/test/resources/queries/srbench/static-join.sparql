@@ -3,7 +3,7 @@ PREFIX weather: <http://knoesis.wright.edu/ssw/ont/weather.owl#>
 PREFIX wgs84: <http://www.w3.org/2003/01/geo/wgs84_pos#> 
 
 SELECT DISTINCT ?sensor ?observation 
-FROM NAMED STREAM <http://cwi.nl/SRBench/observations> [NOW - 10 S SLIDE 1 S]
+FROM NAMED STREAM <http://cwi.nl/SRBench/observations> [NOW - 10 S]
 WHERE {
   ?observation om-owl:observedBy ?sensor;
                a weather:TemperatureObservation.

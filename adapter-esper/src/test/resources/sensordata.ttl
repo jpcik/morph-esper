@@ -11,16 +11,19 @@
 @prefix wgs84: <http://www.w3.org/2003/01/geo/wgs84_pos#> .
 @prefix : <http://es.upm.fi.dia.oeg/sensordata#> . 
 
-:sensor1 wgs84:lon 34.456 ;
-         wgs84:lat 98.345 ;
-         om-owl:id "ISANGALL2".
+<http://meteo.us/sensor/id/ISANGALL2_sens> om-owl:processLocation :loc1;
+                                           om-owl:id "ISANGALL2".
+:loc1 wgs84:lon 34.456 ;
+      wgs84:lat 98.345 .
+         
 
+<http://meteo.us/sensor/id/ERDA2_sens> om-owl:processLocation :loc2;
+                                       om-owl:id "ERDA2".
+:loc2 wgs84:lon 24.456 ;
+         wgs84:lat 88.345 .
 
-:sensor2 wgs84:lon 24.456 ;
-         wgs84:lat 88.345 ;
-         om-owl:id "ERDA2".
-
+<http://meteo.us/sensor/id/BALBO2_sens> om-owl:processLocation :loc3;
+                                        om-owl:id "BALBO2".
 :sensor3 wgs84:lon 33.456 ;
-         wgs84:lat 90.345 ;
-         om-owl:id "BALBO2".
+         wgs84:lat 90.345 .
          
