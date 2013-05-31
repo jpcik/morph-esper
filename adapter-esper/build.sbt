@@ -2,10 +2,10 @@ name := "adapter-esper"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.5"
+version := "1.0.6"
 
 libraryDependencies ++= Seq(
-  "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.5",
+  "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.6",
   "es.upm.fi.oeg.morph.streams" % "esper-engine" % "1.0.1",
   "com.espertech" % "esper" % "4.9.0",
   "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
