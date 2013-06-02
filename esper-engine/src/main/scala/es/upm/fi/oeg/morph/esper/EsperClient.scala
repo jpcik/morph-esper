@@ -10,6 +10,7 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class EsperClient(engine:ActorRef) extends Actor{  
+  import language.postfixOps
   implicit val timeout = Timeout(5 seconds) // needed for `?` below
   
   def query(q:ExecQuery){
