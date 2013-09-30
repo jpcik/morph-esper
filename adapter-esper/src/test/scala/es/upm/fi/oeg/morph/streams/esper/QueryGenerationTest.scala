@@ -14,16 +14,16 @@ import es.upm.fi.oeg.morph.stream.esper.EsperQuery
 
 class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
   private val logger= LoggerFactory.getLogger(this.getClass)
-  val props = ParameterUtils.load(getClass.getClassLoader.getResourceAsStream("config/siq.properties"))
+  //val props = ParameterUtils.load(getClass.getClassLoader.getResourceAsStream("config/siq.properties"))
   
   private def srbench(q:String)=ParameterUtils.loadQuery("queries/srbench/"+q)
   private val srbenchR2rml=new URI("mappings/srbench.ttl")
   
   private def rewrite(sparqlstr:String)={    
-    val trans = new QueryRewriting(props,srbenchR2rml.toString)
+    val trans = new QueryRewriting(srbenchR2rml.toString,"esper")
     trans.translate(SparqlStream.parse(sparqlstr)).asInstanceOf[EsperQuery]
   }
-  
+    
   @Before def setUpBeforeClass() {    
     println("finish init")
   }
@@ -41,7 +41,8 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"output snapshot every 0.98 hour")
   }
 
-  @Test def joinPatternObjects{    
+  @Test def joinPatternObjects{
+    
     val q=rewrite(srbench("join-pattern-objects.sparql"))   
     val res=Array("SELECT DISTINCT " +
     		"rel1.stationId AS observation_stationId," +
@@ -118,7 +119,7 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"rel0.stationId AS sensor_stationId " +
     		"FROM " +
     		"wunderground.win:time(1.0 hour) AS rel0 " +
-    		"WHERE rel0.relativeHumidity > 0.3 AND rel0.relativeHumidity < 0.7  " +
+    		"WHERE rel0.windSpeed > 0.3 AND rel0.windSpeed < 0.7  " +
     		"output snapshot every 0.98 hour")
     compare(q,res) should be (true)
   }    
@@ -171,13 +172,11 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
   @Test def optionalJoinObservations{ 	 
     val q=rewrite(srbench("optional-join-observations.sparql"))
     q.serializeQuery should be ("SELECT DISTINCT " +
-    		"rel0.relativeHumidity AS v2," +
     		"rel1.stationId AS observation_stationId," +
     		"rel0.observationTime AS observation2_observationTime," +
-    		"rel1.temperature AS v1," +
     		"rel0.stationId AS observation2_stationId," +
     		"rel1.stationId AS sensor_stationId," +
-    		"rel1.observationTime AS observation_observationTime " +
+    		"rel1.observationTime AS observation_observationTime "+
     		"FROM " +
     		"wunderground.win:time(2.0 second) AS rel0," +
     		"wunderground.win:time(2.0 second) AS rel1 " +
@@ -198,6 +197,20 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"output snapshot every 0.98 hour")
   }    
 
+  @Test def filterUriInstance{ 	 
+    val q=rewrite(srbench("filter-uri-instance.sparql"))
+    logger.debug("query "+q.serializeQuery)
+    /*q.serializeQuery should be ("SELECT DISTINCT " +
+    		"rel0.temperature AS value," +
+    		"rel0.stationId AS sensor_stationId " +
+    		"FROM " +
+    		"wunderground.win:time(1.0 hour) AS rel0 " +
+    		"WHERE " +
+    		"rel0.temperature > 0.5  " +
+    		"output snapshot every 0.98 hour")*/
+  }    
+
+  
   @Test def variablePredicate{ 	 
     val q=rewrite(srbench("variable-predicate.sparql"))
     logger.info(q.serializeQuery)

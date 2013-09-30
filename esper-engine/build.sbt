@@ -7,7 +7,7 @@ version := "1.0.1"
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",
   "ch.qos.logback" % "logback-classic" % "1.0.9",  
-  "com.espertech" % "esper" % "4.3.0",
+  "com.espertech" % "esper" % "4.9.0",
   "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
   "org.scalacheck" % "scalacheck_2.10" % "1.10.0" % "test",
   "com.typesafe.akka" %% "akka-actor" % "2.1.2",

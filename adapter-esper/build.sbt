@@ -2,17 +2,13 @@ name := "adapter-esper"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.6"
+version := "1.0.8"
 
 libraryDependencies ++= Seq(
-  "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.6",
+  "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.8" exclude("org.slf4j","slf4j-log4j12"),
   "es.upm.fi.oeg.morph.streams" % "esper-engine" % "1.0.1",
-  "com.espertech" % "esper" % "4.9.0",
   "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
-  "org.scalacheck" % "scalacheck_2.10" % "1.10.0" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.1.2",
-  "com.typesafe.akka" %% "akka-remote" % "2.1.2",
-  "com.typesafe.akka" %% "akka-kernel" % "2.1.2"
+  "org.scalacheck" % "scalacheck_2.10" % "1.10.0" % "test"
 )
 
 resolvers ++= Seq(

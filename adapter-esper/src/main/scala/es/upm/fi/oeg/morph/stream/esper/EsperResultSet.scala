@@ -12,9 +12,11 @@ import es.upm.fi.oeg.morph.stream.algebra.xpr.OperationXpr
 import org.slf4j.LoggerFactory
 import es.upm.fi.oeg.morph.stream.algebra.xpr.ConstantXpr
 
-class EsperResultSet(val records:Stream[Array[Object]], 
-    val metadata: Map[String, Xpr],queryVars:Array[String]) extends StreamResultSet {
-  private val it = records.iterator
+class EsperResultSet(override val records:Stream[Array[Object]], 
+    override val metadata: Map[String, Xpr],override val queryVars:Seq[String]) extends StreamResultSet {
+
+}
+  /*private val it = records.iterator
   private var current: Seq[Object] = _
   private val logger = LoggerFactory.getLogger(this.getClass)
   
@@ -45,7 +47,7 @@ class EsperResultSet(val records:Stream[Array[Object]],
   private val metaData: ResultSetMetaData = createMetadata
   
   private val internalLabels=queryVars.zipWithIndex.toMap
-
+/*
   private val compoundLabels={
     val spk=internalLabels.keys.toArray.filter(k=>k.contains('_')).map{k=>
       val sp=k.split('_')
@@ -53,7 +55,7 @@ class EsperResultSet(val records:Stream[Array[Object]],
     }
     val grouped=spk.groupBy(_._1).map(v=>(v._1,v._2.map(v2=>v2._2)))
     grouped
-  }
+  }*/
   
   private val labelPos=
     (1 to metaData.getColumnCount).map(i=>metaData.getColumnLabel(i)->i).toMap
@@ -101,4 +103,4 @@ class EsperCompResultSet(rss:Seq[EsperResultSet]) extends StreamResultSet{
   override def getObject(columnIndex:Int):Object=current.getObject(columnIndex)
   override def getObject(columnLabel:String):Object=current.getObject(columnLabel)  
   override def getString(columnLabel:String):String = current.getString(columnLabel)
-}
+}*/

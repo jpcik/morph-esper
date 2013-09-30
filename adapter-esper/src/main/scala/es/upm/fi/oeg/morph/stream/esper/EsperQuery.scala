@@ -128,37 +128,7 @@ class EsperQuery (op:AlgebraOp,mods:Array[Modifiers.OutputModifier])
       generateSelectVars(selec.subOp)
     case _=>
   }
-/*
-  def generateAllVars(op:AlgebraOp):Unit= op match{
-    case root:RootOp=>generateAllVars(root.subOp)
-    case proj:ProjectionOp=>
-      proj.expressions.foreach{e=>
-        val xpr=
-          if (e._2==UnassignedVarXpr) null
-          else e._2        
-        xpr match {
-          case rep:ReplaceXpr=>
-            rep.varNames.foreach(v=>allXprs.put(e._1+"_"+v,repExpr(VarXpr(v),proj)))
-            allXprs.put(e._1,rep)
-          case v:VarXpr=>allXprs.put(e._1,repExpr(v,proj))  
-          case null=>
-          case _=>  
-		}
-      }
-      generateAllVars(proj.subOp)
-    case group:GroupOp=>
-      group.aggs.foreach{agg=>
-        //allXprs.put(agg._1,repExpr(agg._2,group))
-      }
-      generateAllVars(group.subOp)
-    case join:JoinOp=>
-      generateAllVars(join.left)
-      generateAllVars(join.right)
-    case selec:SelectionOp=>
-      generateAllVars(selec.subOp)
-    case _=>
-  }
-*/
+
   
   //tests for static triples: remove 
   private def fakeQuery(q:String)=

@@ -38,6 +38,7 @@ class EsperEngine extends Actor{
     case ListenQuery(query,actor)=>
       logger.debug("Recieved this query to listen: "+query)            
       val ref=epAdministrator.createEPL(query)
+      
    	  val propNames=ref.getEventType.getPropertyNames
       ref.addListener(new UpdateListener{
         def update(newData:Array[EventBean],oldData:Array[EventBean]){  
@@ -58,7 +59,7 @@ class EsperEngine extends Actor{
       logger.debug("Recieved pull data: "+id)            
 	  val r=epAdministrator.getStatement(id)
 	  val propNames=r.getEventType.getPropertyNames
-	  val results=r.iterator.map{i=>
+	  val results=r.iterator().map{i=>
         propNames.map(key=>i.get(key)).toArray
       }	  
       sender ! results.toArray

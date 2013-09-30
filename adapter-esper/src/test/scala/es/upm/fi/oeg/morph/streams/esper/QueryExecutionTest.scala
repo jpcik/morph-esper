@@ -16,12 +16,23 @@ import es.upm.fi.oeg.morph.stream.evaluate.QueryEvaluator
 import es.upm.fi.oeg.morph.stream.evaluate.EvaluatorUtils
 import org.junit.Ignore
 import org.slf4j.LoggerFactory
+import es.upm.fi.oeg.morph.stream.esper.EsperEvaluator
+import akka.actor.Props
+import akka.pattern.ask
+import es.upm.fi.oeg.morph.stream.evaluate.RegisterQuery
+import akka.util.Timeout
+import concurrent.duration._
+import language.postfixOps
+import es.upm.fi.oeg.morph.stream.esper.EsperAdapter
 
 class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
   private val logger= LoggerFactory.getLogger(this.getClass)
+  //implicit val timeout = Timeout(5 seconds) // needed for `?` below
+
   lazy val esper=new EsperServer
-  val props = ParameterUtils.load(getClass.getClassLoader.getResourceAsStream("config/siq.properties"))
-  val eval = new QueryEvaluator(props,esper.system)
+  //val props = ParameterUtils.load(getClass.getClassLoader.getResourceAsStream("config/siq.properties"))
+  
+  val eval =new EsperAdapter(esper.system)
   
   private def srbench(q:String)=loadQuery("queries/srbench/"+q)
   private val srbenchR2rml=new URI("mappings/srbench.ttl")
@@ -60,6 +71,7 @@ class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Che
     val qid=eval.registerQuery(srbench("filter-value.sparql"),srbenchR2rml)        
     Thread.sleep(7000)
     val bindings=eval.pull(qid)   
+    logger.debug(EvaluatorUtils.serialize(bindings))
   }    
   
   @Test def joinPatternMatching{ 	 

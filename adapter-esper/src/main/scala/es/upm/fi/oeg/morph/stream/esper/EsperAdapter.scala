@@ -10,7 +10,6 @@
 **/
 
 package es.upm.fi.oeg.morph.stream.esper
-import es.upm.fi.oeg.morph.stream.evaluate.StreamEvaluatorAdapter
 import es.upm.fi.oeg.morph.stream.query.SourceQuery
 import java.util.Properties
 import collection.JavaConversions._
@@ -34,13 +33,19 @@ import scala.collection.mutable.ArrayBuffer
 import es.upm.fi.oeg.morph.stream.evaluate.StreamReceiver
 import org.slf4j.LoggerFactory
 import scala.language.postfixOps
+import com.typesafe.config.ConfigFactory
+import es.upm.fi.oeg.morph.stream.evaluate.ComposedResultSet
+import es.upm.fi.oeg.morph.stream.evaluate.QueryEvaluator
+import es.upm.fi.oeg.morph.stream.evaluate.DataReceiver
+import es.upm.fi.oeg.morph.stream.evaluate.StreamReceiver
 
-class EsperAdapter(props:Properties,system:ActorSystem) extends  StreamEvaluatorAdapter {
-  lazy val proxy=new EsperProxy(system,props.getProperty("siq.adapter.esper.url"))
+class EsperAdapter(sys:ActorSystem,systemId:String="esper") extends QueryEvaluator(systemId) {
+  val config = ConfigFactory.load.getConfig("morph.streams."+systemId+".adapter")
+  lazy val proxy=new EsperProxy(sys,config.getString("url"))
   implicit val timeout = Timeout(5 seconds) // needed for `?` below
   private val ids=new collection.mutable.HashMap[String,Seq[String]]
-  
-  def registerQuery(query:SourceQuery)={
+    
+  override def i_registerQuery(query:SourceQuery)={
     val esperQuery=query.asInstanceOf[EsperQuery]
     val qs:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
@@ -55,7 +60,7 @@ class EsperAdapter(props:Properties,system:ActorSystem) extends  StreamEvaluator
     queryIds.head
   }
   
-  def pull(id:String,query:SourceQuery)={
+  override def i_pull(id:String,query:SourceQuery)={
     val esperQuery=query.asInstanceOf[EsperQuery]
     val queries:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
@@ -64,43 +69,37 @@ class EsperAdapter(props:Properties,system:ActorSystem) extends  StreamEvaluator
     val results=queryIds.map{qid=>
       val fut=(proxy.engine ? PullData(qid._1))
       val res=Await.result(fut,timeout.duration).asInstanceOf[Array[Array[Object]]]
-      new EsperResultSet(res.toStream,qid._2.queryExpressions,qid._2.selectXprs.keys.toList.map(_.toString).toArray)
+      new EsperResultSet(res.toStream,qid._2.queryExpressions,qid._2.selectXprs.keys.toList.map(_.toString).toSeq)
     }
-    new EsperCompResultSet(results)
+    new ComposedResultSet(results)
   }
     
-  def listenQuery(query:SourceQuery,receiver:StreamReceiver){
+  override def i_listenToQuery(query:SourceQuery,receiver:StreamReceiver){
     val esperQuery=query.asInstanceOf[EsperQuery]
     val queries:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
       else Array(esperQuery)
       
     queries.foreach{q=>
-      val acrf=proxy.system.actorOf(Props(new StreamRec(receiver,q)),"reci"+System.currentTimeMillis)
+      val acrf=proxy.system.actorOf(Props(new StreamRec(receiver,q)),"reci"+System.nanoTime)
       proxy.engine ! ListenQuery(q.serializeQuery,acrf)
     }
   }
   
-  def executeQuery(query:SourceQuery) = {
+  override def i_executeQuery(query:SourceQuery) = {
     val esperQuery=query.asInstanceOf[EsperQuery]
-    val id=registerQuery(query)
+    val id=i_registerQuery(query)
     Thread.sleep(3000)
-    pull(id,query)         
+    i_pull(id,query)         
   }
 }
 
-class StreamRec(rec:StreamReceiver,esperQuery:EsperQuery) extends Actor{
-  private val logger = LoggerFactory.getLogger(this.getClass)
-  private val xprNames=esperQuery.selectXprs.keys.toList.map(_.toString).toArray
-  private val varsX=esperQuery.queryExpressions
-    
-  def receive={
-    case data:Array[Array[Object]]=>
-        logger.trace("Array intercepted")
-        val rs=new EsperResultSet(data.toStream,varsX,xprNames)
-        val dt=new DataTranslator(List(rs),esperQuery)
-        rec.receiveData(dt.transform)        
-    case m=>logger.debug("got "+m)
-        throw new IllegalArgumentException("Stream receiver got: "+m)
+class StreamRec(rec:StreamReceiver,esperQuery:EsperQuery) extends DataReceiver(rec,esperQuery){
+  override def resultSet(data:Stream[Array[Object]],query:SourceQuery)={
+    val xprNames=esperQuery.selectXprs.keys.toList.map(_.toString).toArray
+    val varsX=esperQuery.queryExpressions
+    new EsperResultSet(data.toStream,varsX,xprNames)
   }
+
 }
+

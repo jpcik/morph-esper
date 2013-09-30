@@ -17,6 +17,7 @@ class DemoStreamer(stationid:String,extent:String,rate:Int,proxy:EsperProxy)   {
 	     "airPressure"-> rand.nextDouble,
 	     "temperature"->rand.nextDouble,
 	     "relativeHumidity"->rand.nextDouble,
+	     "windSpeed"->rand.nextDouble,
 	     "timestamp"-> rand.nextDouble).toMap)	    
   }
 

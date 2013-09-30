@@ -48,7 +48,26 @@
   rr:predicateObjectMap [ rr:predicate om-owl:result;
                           rr:objectMap [ rr:parentTriplesMap :humObsResult; 
                                          rr:joinCondition [rr:parent "stationId";rr:child "stationId"] ]];
-  rr:predicateObjectMap [ rr:predicate om-owl:observedBy; rr:objectMap [ rr:template "http://meteo.us/sensor/id/{stationId}_sens"] ];
+  rr:predicateObjectMap [ rr:predicate om-owl:obsejjrvedBy; rr:objectMap [ rr:template "http://meteo.us/sensor/id/{stationId}_sens"] ];
   rr:predicateObjectMap [ rr:predicate om-owl:observedProperty; rr:objectMap [ rr:constant weather:RelativeHumidity] ];
+.   
+
+:windspObsResult a rr:TriplesMap;
+  rr:logicalTable :wundtable;
+  rr:subjectMap   [ rr:template "http://meteo.us/{stationId}/windspeed/observationresult/{observationTime}"; 
+                    rr:class om-owl:Result; rr:graph srbench:observations ];
+  rr:predicateObjectMap [ rr:predicate om-owl:floatValue; rr:objectMap	[ rr:column "windSpeed" ] ];     		   		  
+  rr:predicateObjectMap [ rr:predicate om-owl:uom; rr:objectMap	[ rr:constant morph:kph ] ];     		   		  
+.
+
+:windspObs a rr:TriplesMap;
+  rr:logicalTable :wundtable;
+  rr:subjectMap   [ rr:template "http://meteo.us/{stationId}/windspeed/observation/{observationTime}"; 
+                    rr:class weather:WindSpeedObservation; rr:graph srbench:observations ];
+  rr:predicateObjectMap [ rr:predicate om-owl:result;
+                          rr:objectMap [ rr:parentTriplesMap :windspObsResult; 
+                                         rr:joinCondition [rr:parent "stationId";rr:child "stationId"] ]];
+  rr:predicateObjectMap [ rr:predicate om-owl:observedBy; rr:objectMap [ rr:template "http://meteo.us/sensor/id/{stationId}_sens"] ];
+  rr:predicateObjectMap [ rr:predicate om-owl:observedProperty; rr:objectMap [ rr:constant weather:WindSpeed] ];
 .   
  

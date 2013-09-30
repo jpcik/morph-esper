@@ -7,9 +7,11 @@
 	</appender>	
 	
 	<logger name="es.upm.fi.oeg.morph" level="DEBUG" />
+	<logger name="es.upm.fi.oeg.morph.r2rml" level="INFO"/>
+	<logger name="es.upm.fi.oeg.morph.stream.rewriting.QueryOptimizer" level="TRACE"/>
 	<logger name="es.upm.fi.oeg.morph.stream.esper.EsperResultSet" level="TRACE" />
 	<logger name="eu.planetdata.srbench" level="TRACE" />
-	
+		
 	<root level="INFO">
 		<appender-ref ref="STDOUT" />
 	</root>
