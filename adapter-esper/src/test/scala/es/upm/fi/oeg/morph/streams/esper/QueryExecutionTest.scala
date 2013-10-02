@@ -24,18 +24,18 @@ import akka.util.Timeout
 import concurrent.duration._
 import language.postfixOps
 import es.upm.fi.oeg.morph.stream.esper.EsperAdapter
+import es.upm.fi.oeg.morph.stream.evaluate.Mapping
 
 class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
   private val logger= LoggerFactory.getLogger(this.getClass)
   //implicit val timeout = Timeout(5 seconds) // needed for `?` below
 
   lazy val esper=new EsperServer
-  //val props = ParameterUtils.load(getClass.getClassLoader.getResourceAsStream("config/siq.properties"))
   
   val eval =new EsperAdapter(esper.system)
   
   private def srbench(q:String)=loadQuery("queries/srbench/"+q)
-  private val srbenchR2rml=new URI("mappings/srbench.ttl")
+  private val srbenchR2rml=new Mapping(new URI("mappings/srbench.ttl"))
   
   @Before def setUpBeforeClass() {
     //PropertyConfigurator.configure(getClass.getResource("/config/log4j.properties"))
