@@ -25,6 +25,9 @@ import concurrent.duration._
 import language.postfixOps
 import es.upm.fi.oeg.morph.stream.esper.EsperAdapter
 import es.upm.fi.oeg.morph.stream.evaluate.Mapping
+import es.upm.fi.oeg.siq.sparql.SparqlResults
+import es.upm.fi.oeg.morph.esper.EsperProxy
+import es.upm.fi.oeg.morph.esper.CreateWindow
 
 class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
   private val logger= LoggerFactory.getLogger(this.getClass)
@@ -35,16 +38,26 @@ class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Che
   val eval =new EsperAdapter(esper.system)
   
   private def srbench(q:String)=loadQuery("queries/srbench/"+q)
-  private val srbenchR2rml=new Mapping(new URI("mappings/srbench.ttl"))
+  private val srbenchR2rml=Mapping(new URI("mappings/srbench.ttl"))
   
   @Before def setUpBeforeClass() {
     //PropertyConfigurator.configure(getClass.getResource("/config/log4j.properties"))
     esper.startup()
-    val demo = new DemoStreamer("ISANGALL2","wunderground",1,new EsperProxy(esper.system)) 
+    val proxy=new EsperProxy(esper.system)
+    val demo = new DemoStreamer("ISANGALL2","wunderground",1,proxy) 
     demo.schedule
+    //proxy.engine ! CreateWindow("wunderground","wundwind","60")
     println("finish init")
   }
-  
+ 
+  @Test def registerRemove{    
+    val qid=eval.registerQuery(srbench("filter-uri-diff.sparql"),srbenchR2rml)        
+    Thread.sleep(4000)
+    val bindings=eval.pull(qid)
+    
+    logger.debug(EvaluatorUtils.serialize(bindings))
+  }
+
 
   @Test def filterUriDiff{    
     val qid=eval.registerQuery(srbench("filter-uri-diff.sparql"),srbenchR2rml)        
@@ -113,6 +126,7 @@ class QueryExecutionTest extends JUnitSuite with ShouldMatchersForJUnit with Che
     logger.info(EvaluatorUtils.serialize(bindings))
   }    
 
+ 
   @Test def staticJoin{ 	 
     val qid=eval.registerQuery(srbench("static-join.sparql"),srbenchR2rml)        
     Thread.sleep(10000)

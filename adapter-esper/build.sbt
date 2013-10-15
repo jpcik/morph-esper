@@ -6,7 +6,7 @@ version := "1.0.9"
 
 libraryDependencies ++= Seq(
   "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.9" exclude("org.slf4j","slf4j-log4j12"),
-  "es.upm.fi.oeg.morph.streams" % "esper-engine" % "1.0.1",
+  "es.upm.fi.oeg.morph.streams" % "esper-engine" % "1.0.3",
   "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
   "org.scalacheck" % "scalacheck_2.10" % "1.10.0" % "test"
 )

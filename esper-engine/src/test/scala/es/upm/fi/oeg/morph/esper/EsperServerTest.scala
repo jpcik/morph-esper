@@ -12,6 +12,7 @@ import scala.util.{Try, Success, Failure}
 import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 import concurrent.duration._
+import scala.concurrent.Await
 
 
 class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
@@ -31,7 +32,7 @@ class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Check
   @Test def startupTest{
     //val client = proxy.system.actorOf(Props(new EsperClient(proxy.engine)), "lookupActor")
 
-    proxy.engine ! CreateWindow("wunderground","wund","")
+    proxy.engine ! CreateWindow("wunderground","wund","3")
         Thread.sleep(3000)
 
     val d=(proxy.engine ? ExecQuery("select * from wund"))
@@ -48,6 +49,11 @@ class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Check
     Thread.sleep(6000)
     println("wow")
     //client.shutdown
+  }
+  
+  @Test def pullNonexisting{
+    val f=(proxy.engine ? PullData("nonexisting"))
+    println(intercept[IllegalArgumentException]{Await.result(f,timeout.duration).asInstanceOf[String]})
   }
   
   @After def shutdown{

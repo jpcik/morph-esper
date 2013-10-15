@@ -35,8 +35,8 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"rel0.stationId AS observation_stationId," +
     		"rel0.observationTime AS observation_observationTime " +
     		"FROM " +
-    		"wunderground.win:time(1.0 hour) AS rel0," +
-    		"wunderground.win:time(1.0 hour) AS rel1 " +
+    		"wunderground.win:time(1.0 hour) AS rel1," +
+    		"wunderground.win:time(1.0 hour) AS rel0 " +
     		"WHERE ('http://meteo.us/' || rel0.stationId || '/temperature/observation/' || cast(rel0.observationTime,string)) != ('http://meteo.us/' || rel1.stationId || '/humidity/observation/' || cast(rel1.observationTime,string))  " +
     		"output snapshot every 0.98 hour")
   }
@@ -244,6 +244,18 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"output snapshot every 0.98 hour")
   }    
 
+  @Test def countAggregate{ 	 
+    val q=rewrite(srbench("count-aggregate.sparql"))  
+    q.serializeQuery should be ("SELECT " +
+    		"max(rel0.temperature) AS maxi " +
+    		"FROM " +
+    		"wunderground.win:time(1.0 hour) AS rel0 " +
+    		"WHERE " +
+    		"rel0.temperature < 0.3  " +
+    		"output snapshot every 0.98 hour")
+  }    
+  
+  
   @Test def staticJoin{ 	 
     val q=rewrite(srbench("static-join.sparql"))        
   }    

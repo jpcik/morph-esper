@@ -38,6 +38,8 @@ import es.upm.fi.oeg.morph.stream.evaluate.ComposedResultSet
 import es.upm.fi.oeg.morph.stream.evaluate.QueryEvaluator
 import es.upm.fi.oeg.morph.stream.evaluate.DataReceiver
 import es.upm.fi.oeg.morph.stream.evaluate.StreamReceiver
+import es.upm.fi.oeg.morph.stream.evaluate.ExecuteQuery
+import es.upm.fi.oeg.morph.esper.RemoveQuery
 
 class EsperAdapter(sys:ActorSystem,systemId:String="esper") extends QueryEvaluator(systemId) {
   val config = ConfigFactory.load.getConfig("morph.streams."+systemId+".adapter")
@@ -45,19 +47,34 @@ class EsperAdapter(sys:ActorSystem,systemId:String="esper") extends QueryEvaluat
   implicit val timeout = Timeout(5 seconds) // needed for `?` below
   private val ids=new collection.mutable.HashMap[String,Seq[String]]
     
+  import concurrent.ExecutionContext.Implicits.global 
   override def i_registerQuery(query:SourceQuery)={
     val esperQuery=query.asInstanceOf[EsperQuery]
     val qs:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
       else Array(esperQuery)
     val queryIds=qs.map{q =>    	
-      val d=(proxy.engine ? RegisterQuery(q.serializeQuery))
-      val id= Await.result(d,timeout.duration).asInstanceOf[String]
+      val d=(proxy.engine ? RegisterQuery(q.serializeQuery)).recover{
+        case e:Exception => throw e}
+      val id=Await.result(d,timeout.duration).asInstanceOf[String]      
       id
     }
+    getQueryId(queryIds)
+  }
+
+  //Not the best solution, for multi queries
+  private def getQueryId(queryIds:Seq[String])={
     if (queryIds.size>1)
       ids.+=((queryIds.head,queryIds))
     queryIds.head
+  }
+  
+  override def i_rewriteSerialize(query:SourceQuery)={
+    val esperQuery=query.asInstanceOf[EsperQuery]
+    val qs:Seq[EsperQuery]=
+      if (esperQuery.unions.size>0) esperQuery.unionQueries
+      else Array(esperQuery)
+    Some(qs.map(q=>q.serializeQuery).mkString(" UNION\n "))
   }
   
   override def i_pull(id:String,query:SourceQuery)={
@@ -67,30 +84,39 @@ class EsperAdapter(sys:ActorSystem,systemId:String="esper") extends QueryEvaluat
       else Array(esperQuery) 
     val queryIds=ids.getOrElse(id,Seq(id)).zip(queries)
     val results=queryIds.map{qid=>
-      val fut=(proxy.engine ? PullData(qid._1))
-      val res=Await.result(fut,timeout.duration).asInstanceOf[Array[Array[Object]]]
+      val fut=(proxy.engine ? PullData(qid._1)).recover{
+        case e:Exception => throw e}
+      val res=Await.result(fut,timeout.duration).asInstanceOf[Array[Array[Object]]]      
       new EsperResultSet(res.toStream,qid._2.queryExpressions,qid._2.selectXprs.keys.toList.map(_.toString).toSeq)
     }
     new ComposedResultSet(results)
   }
     
-  override def i_listenToQuery(query:SourceQuery,receiver:StreamReceiver){
+  override def i_listenToQuery(query:SourceQuery,receiver:StreamReceiver)={
     val esperQuery=query.asInstanceOf[EsperQuery]
     val queries:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
       else Array(esperQuery)
       
-    queries.foreach{q=>
+    val queryIds=queries.map{q=>
       val acrf=proxy.system.actorOf(Props(new StreamRec(receiver,q)),"reci"+System.nanoTime)
-      proxy.engine ! ListenQuery(q.serializeQuery,acrf)
+      val d=(proxy.engine ? ListenQuery(q.serializeQuery,acrf)).recover{
+        case e:Exception => throw e}
+      Await.result(d,timeout.duration).asInstanceOf[String]            
     }
+    getQueryId(queryIds)
   }
   
   override def i_executeQuery(query:SourceQuery) = {
     val esperQuery=query.asInstanceOf[EsperQuery]
-    val id=i_registerQuery(query)
-    Thread.sleep(3000)
-    i_pull(id,query)         
+    val d=(proxy.engine ? ExecQuery(esperQuery.serializeQuery))
+    val res= Await.result(d,timeout.duration).asInstanceOf[Array[Array[Object]]]
+    new EsperResultSet(res.toStream,esperQuery.queryExpressions,
+        esperQuery.selectXprs.keys.toList.map(_.toString).toSeq)
+  }
+  
+  override def i_removeQuery(id:String)={
+    proxy.engine ? RemoveQuery(id)        
   }
 }
 

@@ -2,7 +2,7 @@ name := "esper-engine"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.1"
+version := "1.0.3"
 
 libraryDependencies ++= Seq(
   "junit" % "junit" % "4.7",

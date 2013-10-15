@@ -56,7 +56,7 @@ class EsperEvaluator(systemid:String="esper") extends AsyncEvaluator(systemid) {
     new ComposedResultSet(results)
   }
     
-  override def i_listenToQuery(query:SourceQuery,receiver:StreamReceiver){
+  override def i_listenToQuery(query:SourceQuery,receiver:StreamReceiver)={
     val esperQuery=query.asInstanceOf[EsperQuery]
     val queries:Seq[EsperQuery]=
       if (esperQuery.unions.size>0) esperQuery.unionQueries
@@ -66,6 +66,7 @@ class EsperEvaluator(systemid:String="esper") extends AsyncEvaluator(systemid) {
       //val acrf=proxy.system.actorOf(Props(new StreamRec(receiver,q)),"reci"+System.nanoTime)
       proxy.engine ! ListenQuery(q.serializeQuery,null)
     }
+    null
   }
   
   override def i_executeQuery(query:SourceQuery) = {
