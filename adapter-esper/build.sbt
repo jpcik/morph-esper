@@ -2,7 +2,7 @@ name := "adapter-esper"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.9"
+version := "1.0.10"
 
 libraryDependencies ++= Seq(
   "es.upm.fi.oeg.morph" % "query-rewriting" % "1.0.9" exclude("org.slf4j","slf4j-log4j12"),

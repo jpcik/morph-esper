@@ -92,6 +92,7 @@ class QueryGenerationTest extends JUnitSuite with ShouldMatchersForJUnit with Ch
     		"WHERE " +
     		"rel0.stationId=rel1.stationId  " +
     		"output snapshot every 0.98 hour")
+    q.unions.foreach(a=>println(a))
     compare(q,res) should be (true)
   }
 
