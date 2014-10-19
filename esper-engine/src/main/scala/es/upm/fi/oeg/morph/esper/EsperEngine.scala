@@ -20,7 +20,8 @@ class EsperEngine extends Actor{
   
   def receive={
     case Ping(msg)=>logger.info("Received ping: "+msg)
-    case Event(name,attributes)=>epRuntime.sendEvent(attributes,name)
+    case Event(name,attributes)=>
+      epRuntime.sendEvent(attributes,name)
     case CreateWindow(name,window,duration)=>
       logger.debug("Creating named window "+window)
       epAdministrator.createEPL("create window "+window+".win:time("+duration+") as "+name)
@@ -64,7 +65,7 @@ class EsperEngine extends Actor{
 	    sender ! Status.Failure(new IllegalArgumentException("Non-existing query id for pull: "+id))
 	  }
 	  else{
-	    val propNames=stm.getEventType.getPropertyNames
+	    val propNames=stm.getEventType.getPropertyNames	    
 	    val results=stm.iterator().map{i=>
           propNames.map(key=>i.get(key)).toArray
         }	  

@@ -2,17 +2,15 @@ name := "esper-engine"
 
 organization := "es.upm.fi.oeg.morph.streams"
 
-version := "1.0.3"
+version := "1.0.4"
 
 libraryDependencies ++= Seq(
-  "junit" % "junit" % "4.7",
-  "ch.qos.logback" % "logback-classic" % "1.0.9",  
-  "com.espertech" % "esper" % "4.9.0",
-  "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test",
-  "org.scalacheck" % "scalacheck_2.10" % "1.10.0" % "test",
-  "com.typesafe.akka" %% "akka-actor" % "2.1.2",
-  "com.typesafe.akka" %% "akka-remote" % "2.1.2",
-  "com.typesafe.akka" %% "akka-kernel" % "2.1.2"
+  "ch.qos.logback" % "logback-classic" % "1.0.13",  
+  "com.espertech" % "esper" % "5.0.0" exclude("log4j","log4j"),
+  "org.scalatest" %% "scalatest" % "2.2.1" % "test",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.4",
+  "com.typesafe.akka" %% "akka-remote" % "2.3.4",
+  "com.typesafe.akka" %% "akka-kernel" % "2.3.4"
 )
 
 resolvers ++= Seq(
@@ -20,5 +18,5 @@ resolvers ++= Seq(
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"  
 )
 
-javacOptions ++= Seq("-source", "1.7", "-target", "1.6")
+javacOptions ++= Seq("-source", "1.7", "-target", "1.7")
 

@@ -8,7 +8,7 @@ object MorphEsperBuild extends Build {
     unmanagedSourceDirectories in Test <<= (scalaSource in Test)(Seq(_))
   )
   val projSettings = Seq (
-    scalaVersion := "2.10.1",
+    scalaVersion := "2.11.2",
     crossPaths := false,
     scalacOptions ++= Seq("-deprecation","-feature"),
     parallelExecution in Test := false,
@@ -20,7 +20,7 @@ object MorphEsperBuild extends Build {
     EclipseKeys.createSrc := EclipseCreateSrc.Default + EclipseCreateSrc.Resource
   )
   val publishSettings = Seq (
-    publishTo := Some("Artifactory Realm" at "http://aldebaran.dia.fi.upm.es/artifactory/sstreams-releases-local"),
+    publishTo := Some("Artifactory Realm" at "http://planetdata.epfl.ch:8081/artifactory/gsn-release"),
     credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     publishMavenStyle := true,
     publishArtifact in (Compile, packageSrc) := false )
@@ -28,10 +28,10 @@ object MorphEsperBuild extends Build {
   val buildSettings = Defaults.defaultSettings ++ projSettings ++ ideSettings ++ publishSettings 
 
   lazy val root = Project(id = "morph-esper",
-                          base = file("."),settings = buildSettings) aggregate(esperengine,esper)
+                          base = file("."),settings = buildSettings) aggregate(esperengine)
 
-  lazy val esper = Project(id = "adapter-esper",
-                              base = file("adapter-esper"),settings = buildSettings ++ scalaOnly) 
+//  lazy val esper = Project(id = "adapter-esper",
+//                              base = file("adapter-esper"),settings = buildSettings ++ scalaOnly) 
 
   lazy val esperengine = Project(id = "esper-engine",
                               base = file("esper-engine"),settings = buildSettings ++ scalaOnly) 

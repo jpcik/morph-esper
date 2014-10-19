@@ -8,6 +8,6 @@ class EsperProxy(sys:ActorSystem,esperActorStr:String=null) {
   private val esperPath=
     if (esperActorStr!=null) esperActorStr
     else "akka://esperkernel/user/EsperEngine"
-  def engine=system.actorFor(esperPath)
+  def engine=system.actorSelection(esperPath)
   
 }

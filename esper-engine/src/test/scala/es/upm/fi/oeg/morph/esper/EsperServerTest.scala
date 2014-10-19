@@ -1,10 +1,4 @@
 package es.upm.fi.oeg.morph.esper
-import org.scalatest.junit.ShouldMatchersForJUnit
-import org.scalatest.junit.JUnitSuite
-import org.scalatest.prop.Checkers
-import org.junit.Before
-import org.junit.Test
-import org.junit.After
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import akka.actor.Props
@@ -13,23 +7,34 @@ import akka.pattern.{ ask, pipe }
 import akka.util.Timeout
 import concurrent.duration._
 import scala.concurrent.Await
+import language.postfixOps
+import org.scalatest.FlatSpec
+import org.scalatest.Matchers
+import org.slf4j.LoggerFactory
+import org.scalatest.BeforeAndAfter
+import akka.pattern.AskTimeoutException
+import org.scalatest.BeforeAndAfterAll
 
+class EsperServerTest  extends FlatSpec with Matchers with BeforeAndAfter with BeforeAndAfterAll {
+  private val logger= LoggerFactory.getLogger(this.getClass)
 
-class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Checkers {
   lazy val esper=new EsperServer
-    implicit val timeout = Timeout(5 seconds) // needed for `?` below
+  implicit val timeout = Timeout(5 seconds) // needed for `?` below
   lazy val proxy=new EsperProxy(esper.system)
 
     
-  @Before def before{
+  override def beforeAll()={
+    logger.info("the before part ===============================")
     esper.startup 
     import proxy.system.dispatcher
     proxy.system.scheduler.schedule(0 seconds, 1 seconds){
     proxy.engine ! Event("wunderground",Map("temperature"->9.4,"stationId"->"ABT08"))}
+    logger.info("all sent ===============================")
+
   }
     
     
-  @Test def startupTest{
+  "Esper query" should "get registered and receive results" in{
     //val client = proxy.system.actorOf(Props(new EsperClient(proxy.engine)), "lookupActor")
 
     proxy.engine ! CreateWindow("wunderground","wund","3")
@@ -43,7 +48,7 @@ class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Check
         val list=v.asInstanceOf[Array[Object]]
         println("value "+list.mkString)
       case Failure(e)=>
-        println("failed")
+        println("failed "+e.getMessage)
     }
     
     Thread.sleep(6000)
@@ -51,12 +56,14 @@ class EsperServerTest  extends JUnitSuite with ShouldMatchersForJUnit with Check
     //client.shutdown
   }
   
-  @Test def pullNonexisting{
+  "non existing data pull" should "fail" in{
     val f=(proxy.engine ? PullData("nonexisting"))
     println(intercept[IllegalArgumentException]{Await.result(f,timeout.duration).asInstanceOf[String]})
   }
   
-  @After def shutdown{
+  override def afterAll()={
+    
+    logger.debug("dont kill me yet %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
     esper.shutdown
   }
 }
